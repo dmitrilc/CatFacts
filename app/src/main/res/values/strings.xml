@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Cat Facts</string>
+    <string name="random_fact_button">Get a Random Cat Fact</string>
+    <string name="breed_list_button">Get Cat Breeds</string>
+    <string name="fact_list_button">Get Cat Facts</string>
+    <string name="refresh">Refresh</string>
+</resources>
