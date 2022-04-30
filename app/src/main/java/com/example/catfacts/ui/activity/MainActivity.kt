@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.paging.ExperimentalPagingApi
 import com.example.catfacts.databinding.ActivityMainBinding
 import com.example.catfacts.ui.adapter.PagingCatFactAdapter
 import com.example.catfacts.ui.viewmodel.CatFactsViewModel
@@ -11,42 +12,33 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-private const val TAG = "MAIN_ACTIVITY"
-
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
     private val viewModel by viewModels<CatFactsViewModel>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
+
         binding.lifecycleOwner = this
         binding.vm = viewModel
 
         val adapter = PagingCatFactAdapter()
         binding.recyclerView.adapter = adapter
 
-        usePagingSource(adapter)
+        useRemoteMediator(adapter)
 
         setContentView(binding.root)
     }
 
-    private fun usePagingSource(adapter: PagingCatFactAdapter){
-        binding.buttonRefresh.setOnClickListener {
-            adapter.refresh()
-        }
-
+    @OptIn(ExperimentalPagingApi::class)
+    private fun useRemoteMediator(adapter: PagingCatFactAdapter){
         lifecycleScope.launch {
-            viewModel.pagerNoRemoteMediator.collectLatest {
+            viewModel.pagerWithRemoteMediator.collectLatest {
                 adapter.submitData(it)
-            }
-        }
-
-        lifecycleScope.launch {
-            viewModel.currentPage.collect {
-                binding.textViewCurrentPage.text = it
             }
         }
     }

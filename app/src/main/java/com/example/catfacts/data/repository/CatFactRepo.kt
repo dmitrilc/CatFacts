@@ -1,30 +1,46 @@
 package com.example.catfacts.data.repository
 
+import androidx.paging.ExperimentalPagingApi
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.paging.PagingData
 import com.example.catfacts.data.model.CatFact
-import com.example.catfacts.service.WebService
-import kotlinx.coroutines.flow.*
+import com.example.catfacts.data.room.dao.CatFactDao
+import com.example.catfacts.data.room.dao.RemoteKeyDao
+import com.example.catfacts.ui.viewmodel.Stats
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import javax.inject.Inject
 
-private const val TAG = "REPO"
-
+@ExperimentalPagingApi
 class CatFactRepo @Inject constructor (
-    private val webService: WebService
+    private val catFactDao: CatFactDao,
+    private val remoteKeyDao: RemoteKeyDao,
+    private val catFactRemoteMediator: CatFactRemoteMediator
 ) {
 
-    fun getCatFactPagerWithoutRemoteMediator(): Flow<PagingData<CatFact>> =
+    fun getCatFactPagerWithRemoteMediator(): Flow<PagingData<CatFact>> =
         Pager(
-            config = PagingConfig(pageSize = 1)
+            PagingConfig(1),
+            remoteMediator = catFactRemoteMediator
         ) {
-            CatFactPagingSource(webService){ page ->
-                _currentPage.value = "$page"
-            }
+            catFactDao.pagingSource()
         }
             .flow
 
-    private val _currentPage = MutableStateFlow("0")
-    val currentPage = _currentPage.asStateFlow()
+    fun getStats(): Flow<Stats>{
+        return remoteKeyDao
+            .getKeyFlow()
+            .combine(
+                catFactDao.count()
+            ) { key, count ->
+                Stats(
+                    lastLoadedPage = key?.currentPage ?: 0,
+                    lastPage = key?.lastPage ?: 0,
+                    factsCount = count
+                )
+            }
+    }
 
 }
+
